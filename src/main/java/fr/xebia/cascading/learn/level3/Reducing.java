@@ -8,9 +8,12 @@ import cascading.pipe.Each;
 import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
+import cascading.pipe.assembly.AggregateBy;
 import cascading.pipe.assembly.CountBy;
+import cascading.pipe.assembly.SumBy;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
+import fr.xebia.cascading.learn.level2.CustomSplitFunction;
 
 /**
  * Once each input has been individually curated, it can be needed to aggregate information.
@@ -29,7 +32,14 @@ public class Reducing {
 	 * @see http://docs.cascading.org/cascading/2.5/userguide/html/ch03s03.html
 	 */
 	public static FlowDef aggregate(Tap<?, ?, ?> source, Tap<?, ?, ?> sink) {
-		return null;
+		Pipe assembly = new Pipe("aggregate");
+		assembly = new GroupBy(assembly);
+		assembly = new Every(assembly, new Count());
+
+		return FlowDef.flowDef()
+				.addSource(assembly, source)
+				.addTail(assembly)
+				.addSink(assembly, sink);
 	}
 	
 	/**
@@ -42,6 +52,12 @@ public class Reducing {
 	 * @see http://docs.cascading.org/cascading/2.5/userguide/html/ch08s08.html
 	 */
 	public static FlowDef efficientlyAggregate(Tap<?, ?, ?> source, Tap<?, ?, ?> sink) {
-		return null;
+		Pipe assembly = new Pipe("efficiently-aggregate");
+		assembly = new AggregateBy(assembly, new Fields("word"), new CountBy(new Fields("count")));
+
+		return FlowDef.flowDef()
+				.addSource(assembly, source)
+				.addTail(assembly)
+				.addSink(assembly, sink);
 	}
 }

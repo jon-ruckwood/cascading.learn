@@ -5,14 +5,14 @@ import cascading.operation.aggregator.First;
 import cascading.operation.aggregator.Max;
 import cascading.operation.expression.ExpressionFilter;
 import cascading.operation.expression.ExpressionFunction;
-import cascading.operation.regex.RegexFilter;
-import cascading.operation.regex.RegexReplace;
+import cascading.operation.regex.*;
 import cascading.pipe.CoGroup;
 import cascading.pipe.Each;
 import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
 import cascading.pipe.HashJoin;
 import cascading.pipe.Pipe;
+import cascading.pipe.assembly.AggregateBy;
 import cascading.pipe.assembly.CountBy;
 import cascading.pipe.assembly.Rename;
 import cascading.pipe.assembly.Retain;
@@ -32,7 +32,18 @@ public class FreestyleJobs {
 	 * sink field(s) : "word","count"
 	 */
 	public static FlowDef countWordOccurences(Tap<?, ?, ?> source, Tap<?, ?, ?> sink) {
-		return null;
+
+		final Fields wordField = new Fields("word");
+
+		Pipe assembly = new Each("wc", new ExpressionFunction(new Fields("line"), "line.toLowerCase()", String.class));
+		assembly = new Each(assembly, new Fields("line"),
+				new RegexGenerator(wordField, "[a-zA-Z\\-]+"),
+				Fields.SWAP);
+		assembly = new AggregateBy(assembly, new Fields("word"), new CountBy(new Fields("count")));
+
+		return FlowDef.flowDef()
+				.addSource(assembly, source)
+				.addTailSink(assembly, sink);
 	}
 	
 	/**

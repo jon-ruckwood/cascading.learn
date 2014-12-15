@@ -18,9 +18,9 @@ public class CustomSplitFunction<Context> extends BaseOperation<Context> impleme
 	public void operate(@SuppressWarnings("rawtypes") FlowProcess flowProcess,
 			FunctionCall<Context> functionCall) {
 		String line = functionCall.getArguments().getString(0);
-		String word = line; // or not ?
-		functionCall.getOutputCollector().add(new Tuple(word));
-		functionCall.getOutputCollector().add(new Tuple(word));
+		for (String word : line.split("\\s+")) {
+			functionCall.getOutputCollector().add(new Tuple(word));
+		}
 	}
 	
 }

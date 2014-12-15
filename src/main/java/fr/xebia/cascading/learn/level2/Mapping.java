@@ -1,5 +1,6 @@
 package fr.xebia.cascading.learn.level2;
 
+import cascading.flow.Flow;
 import cascading.flow.FlowDef;
 import cascading.operation.Filter;
 import cascading.operation.Function;
@@ -26,7 +27,15 @@ public class Mapping {
 	 * @see http://docs.cascading.org/cascading/2.5/userguide/html/ch09s07.html
 	 */
 	public static FlowDef filterWithExpression(Tap<?, ?, ?> source, Tap<?, ?, ?> sink) {
-		return null;
+		Pipe assembly = new Pipe("filter");
+
+		assembly = new Each(assembly,
+				new ExpressionFilter("!line.contains(\"Hadoop\")", String.class));
+
+		return FlowDef.flowDef()
+				.addSource(assembly, source)
+				.addTail(assembly)
+				.addSink(assembly, sink);
 	}
 	
 	/**
@@ -40,7 +49,12 @@ public class Mapping {
 	 * @see http://docs.cascading.org/cascading/2.5/userguide/html/ch09s07.html
 	 */
 	public static FlowDef transformWithExpression(Tap<?, ?, ?> source, Tap<?, ?, ?> sink) {
-		return null;
+		Pipe assembly = new Pipe("transform");
+		assembly = new Each(assembly, new ExpressionFunction(new Fields("line"), "line.toLowerCase()", String.class));
+		return FlowDef.flowDef()
+				.addSource(assembly, source)
+				.addTail(assembly)
+				.addSink(assembly, sink);
 	}
 	
 	/**

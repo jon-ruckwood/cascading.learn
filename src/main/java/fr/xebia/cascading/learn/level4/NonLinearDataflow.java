@@ -4,8 +4,10 @@ import cascading.flow.FlowDef;
 import cascading.operation.expression.ExpressionFilter;
 import cascading.pipe.CoGroup;
 import cascading.pipe.Each;
+import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
 import cascading.pipe.assembly.Discard;
+import cascading.pipe.assembly.Retain;
 import cascading.pipe.joiner.InnerJoin;
 import cascading.tap.Tap;
 import cascading.tap.hadoop.TemplateTap;
@@ -30,7 +32,20 @@ public class NonLinearDataflow {
 	 */
 	public static FlowDef cogroup(Tap<?, ?, ?> presidentsSource, Tap<?, ?, ?> partiesSource,
 			Tap<?, ?, ?> sink) {
-		return null;
+
+		final Pipe presidents = new Pipe("presidents");
+		final Pipe parties = new Pipe("parties");
+
+		final Fields year = new Fields("year");
+		final Fields declared = new Fields("year1", "president", "year2", "party");
+
+		Pipe assembly = new CoGroup(presidents, year, parties, year, declared);
+		assembly = new Retain(assembly, new Fields("president", "party"));
+
+		return FlowDef.flowDef()
+				.addSource(presidents, presidentsSource)
+				.addSource(parties, partiesSource)
+				.addTailSink(assembly, sink);
 	}
 	
 	/**
@@ -48,7 +63,23 @@ public class NonLinearDataflow {
 	 */
 	public static FlowDef split(Tap<?, ?, ?> source,
 			Tap<?, ?, ?> gaullistSink, Tap<?, ?, ?> republicanSink, Tap<?, ?, ?> socialistSink) {
-		return null;
+
+		final Pipe assembly = new Pipe("split");
+
+		final Pipe gaullist = new Each(new Pipe("gaul", assembly),
+				new Fields("party"),
+				new ExpressionFilter("!\"Gaullist\".equals(party)", String.class));
+
+		final Pipe republican = new Each(new Pipe("rep", assembly),
+				new ExpressionFilter("!\"Republican\".equals(party)", String.class));
+
+		final Pipe socialist = new Each(new Pipe("soc", assembly),
+				new ExpressionFilter("!\"Socialist\".equals(party)", String.class));
+
+		return FlowDef.flowDef()
+				.addSource(assembly, source)
+				.addTailSink(gaullist, gaullistSink)
+				.addTailSink(republican, republicanSink)
+				.addTailSink(socialist, socialistSink);
 	}
-	
 }
